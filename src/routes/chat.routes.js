@@ -1,18 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middlewares/auth.middleware');
-const { accessChat, fetchChats, deleteChat } = require('../controllers/chat.controller');
-const { createGroupChat } = require('../controllers/chat.controller');
-// 1-on-1 chat access karna ya nayi banana
+const { accessChat, fetchChats, deleteChat, createGroupChat, setTrackedProject, getGroupProjectStats, getChatById, updateCoAdmin } = require('../controllers/chat.controller');
+
 router.post('/', protect, accessChat);
-
-// Apni saari chats dekhna (Inbox)
 router.get('/', protect, fetchChats);
-
-// Chat delete karna
 router.delete('/:chatId', protect, deleteChat);
-
-//new group create
 router.post('/group', protect, createGroupChat);
+
+router.put('/track', protect, setTrackedProject); 
+router.get('/stats/:chatId', protect, getGroupProjectStats); 
+router.get('/:chatId', protect, getChatById);
+router.put('/coadmin', protect, updateCoAdmin); // 👈 NAYA ROUTE ADD KIYA
 
 module.exports = router;

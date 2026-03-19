@@ -17,7 +17,7 @@ const userRoutes = require('./routes/user.routes');
 const cardRoutes = require('./routes/card.routes'); 
 const chatRoutes = require('./routes/chat.routes');
 const messageRoutes = require('./routes/message.routes');
-
+const commentRoutes = require('./routes/comment.routes');
 // ==========================================
 // 🔥 ROUTES MOUNTING (Paths)
 // ==========================================
@@ -26,7 +26,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/cards', cardRoutes); 
 app.use('/api/chat', chatRoutes);
 app.use('/api/message', messageRoutes);
-
+app.use('/api/comments', commentRoutes);
 // Test Route (Check karne ke liye ki API chal rahi hai ya nahi)
 app.get('/', (req, res) => {
   res.send('DevSpace API is running smoothly... 🚀');
@@ -35,6 +35,13 @@ app.get('/', (req, res) => {
 // Agar upar wale kisi route se match nahi hua, toh 404 Error (Yeh sabse last me hona chahiye)
 app.use((req, res, next) => {
   res.status(404).json({ message: "Route not found" });
+});
+app.use((err, req, res, next) => {
+  console.error("🚨 BACKEND UPLOAD ERROR:", err); // Backend terminal me error aayega
+  res.status(500).json({ 
+    message: "Server File Upload Error", 
+    error: err.message || "Unknown Error" 
+  });
 });
 
 module.exports = app;

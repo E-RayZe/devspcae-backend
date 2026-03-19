@@ -49,5 +49,30 @@ const allMessages = async (req, res) => {
     res.status(400).json({ message: "Failed to fetch messages", error: error.message });
   }
 };
+// ... (Tumhare purane sendMessage aur allMessages functions yahan honge)
 
-module.exports = { sendMessage, allMessages };
+// 🔥 NEW: DELETE MESSAGE (ONLY ADMIN CAN DO THIS)
+const deleteMessage = async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.messageId).populate("chat");
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    const chat = await Chat.findById(message.chat._id);
+    
+    // Check if user is Main Admin OR Co-Admin
+    const isMainAdmin = chat.groupAdmin.toString() === req.user.id;
+    const isCoAdmin = chat.coAdmins.some(adminId => adminId.toString() === req.user.id);
+    const isAdmin = isMainAdmin || isCoAdmin;
+
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Action Denied! Only admins can delete messages." });
+    }
+
+    await Message.findByIdAndDelete(req.params.messageId);
+    res.status(200).json({ message: "Message deleted successfully", messageId: req.params.messageId });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { sendMessage, allMessages, deleteMessage }; // 👈 export add karo

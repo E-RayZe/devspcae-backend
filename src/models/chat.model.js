@@ -2,35 +2,25 @@ const mongoose = require('mongoose');
 
 const chatSchema = new mongoose.Schema(
   {
-    chatName: { 
-      type: String, 
-      trim: true 
-    },
-    isGroupChat: { 
-      type: Boolean, 
-      default: false 
-    },
-    // Kon kon users is chat me hain (DM me 2, Group me zyada)
-    users: [
-      { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User' 
+    chatName: { type: String, trim: true },
+    isGroupChat: { type: Boolean, default: false },
+    users: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    latestMessage: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+    
+    // Main Creator
+    groupAdmin: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    // 🔥 NEW: Multiple Admins Array
+    coAdmins: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], 
+    
+    trackedProjects: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        wakatimeProjects: [{ type: String, trim: true }],
+        githubRepos: [{ type: String, trim: true }]
       }
-    ],
-    // UI me bahar sabse latest message dikhane ke liye
-    latestMessage: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Message',
-    },
-    // Agar project room/group hai, toh uska admin kon hai
-    groupAdmin: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User' 
-    },
+    ]
   },
-  { 
-    timestamps: true 
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('Chat', chatSchema);

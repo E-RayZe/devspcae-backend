@@ -155,7 +155,115 @@ const getMe = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+const getWakatimeProjects = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || !user.wakatimeApiKey) return res.status(400).json({ message: 'WakaTime API Key not linked' });
+
+    const base64Key = Buffer.from(user.wakatimeApiKey).toString('base64');
+    // Fetch user's projects from WakaTime
+    const response = await axios.get(
+      'https://wakatime.com/api/v1/users/current/projects',
+      { headers: { Authorization: `Basic ${base64Key}` } }
+    );
+    
+    // Sirf project names extract karke bhejenge
+    const projects = response.data.data.map(proj => proj.name);
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch WakaTime projects.' });
+  }
+};
+
+const getGithubRepos = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || !user.githubUsername) return res.status(400).json({ message: 'GitHub not linked' });
+
+    const response = await axios.get(`https://api.github.com/users/${user.githubUsername}/repos?sort=updated&per_page=50`);
+    
+    // Sirf repo names nikalenge
+    const repos = response.data.map(repo => repo.name);
+    res.status(200).json(repos);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch GitHub repos.' });
+  }
+};
 // module.exports me getMe add karna mat bhoolna!
+
+// devspace-backend/src/controllers/user.controller.js ke niche add karo
+
+// ✅ TOGGLE FOLLOW / UNFOLLOW
+const toggleFollow = async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const currentUserId = req.user.id;
+
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({ message: "You cannot follow yourself" });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(targetUserId);
+
+    if (!targetUser) return res.status(404).json({ message: "User not found" });
+
+    const isFollowing = currentUser.following.includes(targetUserId);
+
+    if (isFollowing) {
+      // Unfollow
+      currentUser.following.pull(targetUserId);
+      targetUser.followers.pull(currentUserId);
+    } else {
+      // Follow
+      currentUser.following.push(targetUserId);
+      targetUser.followers.push(currentUserId);
+    }
+
+    await currentUser.save();
+    await targetUser.save();
+
+    res.status(200).json({ isFollowing: !isFollowing });
+  } catch (error) {
+    res.status(500).json({ message: "Error toggling follow" });
+  }
+};
+
+// ✅ GET OTHER USER PROFILE (For public view)
+const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user profile" });
+  }
+};
+
+// ✅ GET FOLLOWERS LIST
+const getFollowers = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('followers', '_id username email');
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user.followers);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching followers" });
+  }
+};
+
+// ✅ GET FOLLOWING LIST
+const getFollowing = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('following', '_id username email');
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user.following);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching following" });
+  }
+};
+
+// 👇 Niche export me inko add karna mat bhoolna!
 module.exports = { 
   saveWakatimeKey, 
   getWakatimeStats, 
@@ -164,5 +272,12 @@ module.exports = {
   disconnectWakatime, 
   disconnectGithub,
   searchUsers,  // 👈 Yeh ensure karo
-  getMe         // 👈 Aur yeh ensure karo
+  getMe   ,
+  getWakatimeProjects, // 👈 New added
+  getGithubRepos  ,
+  toggleFollow,
+  getUserProfile,
+  getFollowers, 
+  getFollowing
 };
+
